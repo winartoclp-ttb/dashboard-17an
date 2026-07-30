@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Pendaftaran — HUT RI ke-81 RW 14 TTB</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --merah:#B91C1C;
+    --merah-dark:#7F1D1D;
+    --ink:#1C1917;
+    --paper:#FFFDF9;
+    --paper-dim:#F3EFE7;
+    --gold:#C9A227;
+    --line:#E7E0D2;
+    --green:#166534;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Segoe UI', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'Courier New', monospace;}
+
+  header{
+    background:var(--merah);
+    color:#fff;
+    padding:28px 20px 40px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:8px;
+    background:repeating-linear-gradient(90deg,#fff 0 18px, transparent 18px 26px);
+    opacity:.85;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    opacity:.85;
+    font-weight:600;
+  }
+  h1{
+    font-family:'Arial Black', Impact, sans-serif;
+    font-weight:900;
+    font-size:clamp(28px,7vw,44px);
+    line-height:1.02;
+    letter-spacing:-.01em;
+    margin:6px 0 4px;
+    text-transform:uppercase;
+  }
+  header p{margin:0; opacity:.9; font-size:14px;}
+  .updated{font-size:12px; opacity:.75; margin-top:10px;}
+
+  main{max-width:1000px; margin:0 auto; padding:0 16px 60px;}
+
+  .sourcebar{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:14px;
+    margin-top:16px;
+    position:relative; z-index:2;
+  }
+  .sourcebar-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .sourcebar input[type=text]{
+    flex:1; min-width:180px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+  }
+  .sourcebar input[type=text]:focus{outline:2px solid var(--gold);}
+  .btn{
+    background:var(--merah);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn.secondary{background:var(--ink);}
+  .btn:disabled{opacity:.5; cursor:default;}
+  .source-status{font-size:11.5px; color:#78716C; margin-top:8px;}
+  .source-status.err{color:#B91C1C; font-weight:600;}
+  .source-status.ok{color:var(--green); font-weight:600;}
+  details.howto{margin-top:10px; font-size:12px; color:#57534E;}
+  details.howto summary{cursor:pointer; font-weight:600; color:var(--merah-dark);}
+  details.howto ol{margin:8px 0 0; padding-left:20px; line-height:1.7;}
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:10px;
+    margin-top:16px;
+    position:relative;
+    z-index:2;
+  }
+  .stat{
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:4px solid var(--gold);
+    border-radius:4px;
+    padding:14px 12px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+  }
+  .stat .num{font-size:26px; font-weight:800; color:var(--merah-dark); line-height:1;}
+  .stat .lbl{font-size:11.5px; color:#57534E; margin-top:4px; text-transform:uppercase; letter-spacing:.03em;}
+
+  section{margin-top:38px;}
+  h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:var(--merah-dark);
+    border-bottom:2px solid var(--ink);
+    padding-bottom:8px;
+    margin-bottom:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  h2 span.count{color:#A8A29E; font-weight:400; letter-spacing:0; text-transform:none; font-size:12px;}
+
+  .grid2{display:grid; grid-template-columns:1fr; gap:24px;}
+  @media(min-width:720px){.grid2{grid-template-columns:1fr 1fr;}}
+  .chart-box{background:#fff; border:1px solid var(--line); border-radius:6px; padding:16px;}
+  .chart-box canvas{max-height:260px;}
+  .chart-title{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:10px;}
+
+  .controls{
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;
+  }
+  .chip{
+    border:1px solid var(--line);
+    background:#fff;
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12.5px;
+    cursor:pointer;
+    color:var(--ink);
+    user-select:none;
+  }
+  .chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  input#search{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    margin-bottom:12px;
+    background:#fff;
+  }
+  input#search:focus{outline:2px solid var(--gold);}
+
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--merah);
+    border-radius:4px;
+    padding:12px 14px;
+    margin-bottom:8px;
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .card-name{font-weight:700; font-size:15px;}
+  .card-meta{font-size:11.5px; color:#78716C;}
+  .card-badges{margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;}
+  .badge{
+    font-size:10.5px;
+    background:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:2px 8px;
+    border-radius:999px;
+    color:#44403C;
+  }
+  .badge.rt1{border-color:#93C5FD;}
+  .badge.rt2{border-color:#FDE68A;}
+  .badge.rt3{border-color:#BBF7D0;}
+  .card-lomba{margin-top:8px; font-size:12.5px; color:#292524; line-height:1.5;}
+  .card-lomba b{color:var(--merah-dark);}
+  .card-phone{font-size:11.5px; color:#78716C; margin-top:4px;}
+  .empty{text-align:center; color:#A8A29E; padding:30px 0; font-size:13px;}
+
+  footer{
+    text-align:center;
+    font-size:11px;
+    color:#A8A29E;
+    padding:30px 16px 40px;
+  }
+  .note{
+    background:#FEF3C7;
+    border:1px solid #FDE68A;
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:12px;
+    color:#78350F;
+    margin-top:14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Gerakan TTB Asri · RW 14 Taman Tanah Baru</div>
+  <h1>Pendaftaran Lomba HUT RI ke-81</h1>
+  <p>Rekap otomatis dari Google Form — tarik data langsung dari Sheets.</p>
+</header>
+
+<main>
+  <div class="sourcebar">
+    <div class="sourcebar-row">
+      <input type="text" id="sheetUrl" placeholder="Tempel URL Web App Google Apps Script di sini (https://script.google.com/macros/s/.../exec)">
+      <button class="btn" id="loadBtn">Muat Data</button>
+      <button class="btn secondary" id="reloadBtn" style="display:none">Muat Ulang</button>
+    </div>
+    <div class="source-status" id="sourceStatus">Belum terhubung — memakai data contoh di bawah. Tempel URL Web App untuk menarik data terbaru dari Google Form.</div>
+    <details class="howto">
+      <summary>Belum punya URL Web App? Lihat cara membuatnya</summary>
+      <ol>
+        <li>Buka Google Sheets hasil Form Anda.</li>
+        <li>Menu <b>Extensions → Apps Script</b>.</li>
+        <li>Hapus kode default, paste kode <span class="mono">Code.gs</span> yang sudah disiapkan.</li>
+        <li>Klik <b>Deploy → New deployment</b> → pilih tipe <b>Web app</b>.</li>
+        <li>Execute as: <b>Me</b>, Who has access: <b>Anyone</b> → klik <b>Deploy</b>, lalu izinkan akses.</li>
+        <li>Copy URL yang muncul (diakhiri <span class="mono">/exec</span>) dan tempel di kotak atas.</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="stats" id="statGrid"></div>
+
+  <section>
+    <h2>Pendaftar per RT</h2>
+    <div class="grid2">
+      <div class="chart-box"><div class="chart-title">Jumlah pendaftaran per RT</div><canvas id="chartRT"></canvas></div>
+      <div class="chart-box"><div class="chart-title">Jumlah pendaftaran per kelompok umur</div><canvas id="chartUmur"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lomba Terpopuler <span class="count" id="lombaCount"></span></h2>
+    <div class="chart-box"><canvas id="chartLomba" style="max-height:340px"></canvas></div>
+  </section>
+
+  <section>
+    <h2>Daftar Peserta <span class="count" id="dataCount"></span></h2>
+    <input id="search" type="text" placeholder="Cari nama, KK, alamat, atau lomba...">
+    <div class="controls" id="rtChips"></div>
+    <div class="controls" id="umurChips"></div>
+    <div id="cardList"></div>
+    <div class="note">Data ini berisi nama, alamat, dan nomor HP warga — gunakan hanya untuk keperluan panitia dan jangan sebarkan tautan/URL ini secara publik.</div>
+  </section>
+</main>
+
+<footer>Dashboard dibuat dari data Google Form pendaftaran lomba 17-an RW 14 TTB.</footer>
+
+<script>
+// ---- Data contoh (dipakai kalau belum terhubung ke Web App) ----
+const fallbackRaw = [
+["Winarto","01","Winarto","Blok A15","0817771765","16 Tahun ke atas",["Tenis Meja Beregu Antar RT","Tenis Meja Single Perorangan","Tenis Meja Double Keluarga","Gerak Jalan Pagi"]],
+["Dull","03","Umar","D no 5","082110724286","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Eza","03","Umar","D no 5","082110724286","4 - 6 Tahun",["Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Aris Darmansyah","02","Aris Darmansyah","B1/6","085811661000","16 Tahun ke atas",["TTB Adventure (Beregu)","Tenis Meja Beregu Antar RT","Tenis Meja Single Perorangan","Futsal Beregu","Cerdas Cermat Wawasan Lingkungan & Kebangsaan","Gerak Jalan Pagi","Keserasian dan Kekompakan Terbaik","Kebersihan Lingkungan","Menghias Sepeda (Sepeda Hias)","Lomba Make Up Mata Tertutup","Lomba Biskuit","Lomba Estafet Gelas (Beregu)"]],
+["Aliya","03","Oktoaji Kharissuhud","E1 No. 10-11","08111472083","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Adeeva","03","Ginanjar","Blok D1no 10","08997111908","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Aidan ayabil","03","Ali amri","E1 no 4","085285076060","10 - 12 Tahun",["Membawa Kelereng dengan Sendok"]],
+["Wafie omar","03","Ali amri","E1 no 4","085285076060","10 - 12 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon","Balap Karung"]],
+["Fairuz","03","Oktoaji Kharissuhud","E1 No. 10-11","08111472083","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Memindahkan Bendera Merah Putih ke Botol"]],
+["Fazia","02","Faizal","Blok B 12","089528121886","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera Merah Putih ke Botol"]],
+["Arsyanendra Evano Mannaf","02","Abi Hanifa","Blok b no 14","081282777414","4 - 6 Tahun",["Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Zuhayr Leandro","02","Faizal Anang satria","C - 10","082211512019","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Muklas Aris","01","Muklas Aris","Blok A3/7","0811160491","16 Tahun ke atas",["TTB Adventure (Beregu)","Tenis Meja Beregu Antar RT","Tenis Meja Single Perorangan","Tenis Meja Double Keluarga","Gerak Jalan Pagi"]],
+["Rein zaman","03","Irawan sentosa","E1 no 16B","085282973011","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Razan","03","Irawan sentosa","E1 /16B","085282973011","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'"]],
+["Alby Adelio Raffa","03","Tria setyawan","Blok E no 2","0821-2154-8559","13 - 15 Tahun",["Balap Karung"]],
+["Tria setyawan","03","Tria setyawan","Blok E no 2","08129956444","16 Tahun ke atas",["Tenis Meja Double Keluarga","Gerak Jalan Pagi"]],
+["Arsyanendra Evano Mannaf","02","Abi Hanifa","B no 14","081282777414","4 - 6 Tahun",["Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Arsyanendra Evano Mannaf","02","Abi Hanifa","B no 14","081282777414","16 Tahun ke atas",["Menghias Sepeda (Sepeda Hias)","Pindahin Bola Warna Warni (2 & 3 Tahun)"]],
+["Hamna Marzia","01","Ryan Hegar","Blok A3 No 10","082113660975","16 Tahun ke atas",["Gerak Jalan Pagi","Menghias Sepeda (Sepeda Hias)","Pindahin Bola Warna Warni (2 & 3 Tahun)"]],
+["Hamna Marzia","01","Ryan Hegar","Blok A3 No 10","082113660975","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Fazia","02","Faizal","B 12","089528121886","16 Tahun ke atas",["Menghias Sepeda (Sepeda Hias)"]],
+["Aruna","02","Dwianto oktory","B2/2","081319498222","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Aisha SN","01","Faridz YD","A/8","081280582805","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["A Farras D","01","Faridz YD","A/8","081280582805","10 - 12 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Muhammad Ghaisan Athariz","01","Cahyono Hadi","TTB Blok A3 No 5","081230228244","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Hary Sudwijanto","02","Hary Sudwijanto","Blok B1 No 8","+62 812-7134-5692","16 Tahun ke atas",["Gerak Jalan Pagi"]],
+["Arsyad Umar","01","Restu Umar","Blok A1 No 1b","081293289366","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Memindahkan Bendera Merah Putih ke Botol"]],
+["Arsyad Umar","01","Restu Umar","Blok A1/ 1B","081293289366","16 Tahun ke atas",["Gerak Jalan Pagi","Menghias Sepeda (Sepeda Hias)"]],
+["Hanin Aqila","02","Mohamad Subhan","C8","085217877632","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Rasyad Abdurrahman","02","Mohamad Subhan","C8","085217877632","13 - 15 Tahun",["Balap Karung"]],
+["Jifan Faris Abdullah","02","Mohamad Subhan","C8","085217877632","10 - 12 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon","Balap Karung"]],
+["Hisyam Az Dzahabi","02","Mohamad Subhan","C8","085217877632","10 - 12 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon","Balap Karung"]],
+["Isham Mahmud Nuruddin","03","Zaky Ramadhan","E1/15B","081225207632","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Ishmat Mahmud Badaruddin","03","Zaky Ramadhan","E1/15B","081225207632","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Izzy Mubarak Asaduddin","03","Zaky Ramadhan","E1/15B","081225207632","4 - 6 Tahun",["Mewarnai Gambar 'Taman Hijau Negeriku'","Memindahkan Bendera (Aula)","Makan Kerupuk","Memindahkan Bendera Merah Putih ke Botol"]],
+["Rifat","02","Firdaus","Blok B4","081808151519","10 - 12 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon","Balap Karung"]],
+["Adeeva","02","Firdaus","B4","081808151519","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]],
+["Firdaus & Qori","02","Muhammad Firdaus","Blok B / no.4","087883763576","16 Tahun ke atas",["Tenis Meja Double Keluarga","Gerak Jalan Pagi","Menghias Sepeda (Sepeda Hias)","Lomba Make Up Mata Tertutup","Lomba Biskuit"]],
+["Jeumpa Aksara","01","Muhammad Aris Yunandar","A/6","087711544582","7 - 9 Tahun",["Membawa Kelereng dengan Sendok","Memecahkan Balon"]]
+];
+
+const umurOrder = ["4 - 6 Tahun","7 - 9 Tahun","10 - 12 Tahun","13 - 15 Tahun","16 Tahun ke atas"];
+
+let entries = [];
+let chartRT=null, chartUmur=null, chartLomba=null;
+let activeRT='all', activeUmur='all';
+
+const statGrid = document.getElementById('statGrid');
+const listEl = document.getElementById('cardList');
+const countEl = document.getElementById('dataCount');
+const searchEl = document.getElementById('search');
+const rtChipsEl = document.getElementById('rtChips');
+const umurChipsEl = document.getElementById('umurChips');
+const sourceStatusEl = document.getElementById('sourceStatus');
+const loadBtn = document.getElementById('loadBtn');
+const reloadBtn = document.getElementById('reloadBtn');
+const urlInput = document.getElementById('sheetUrl');
+
+searchEl.addEventListener('input', renderList);
+
+function normalizeFromRawArray(raw){
+  return raw.map(r => ({nama:r[0], rt:r[1], kk:r[2], alamat:r[3], hp:r[4], umur:r[5], lomba:r[6]}));
+}
+function normalizeFromApi(data){
+  return data.map(d => ({
+    nama:d.nama||'', rt:String(d.rt||'').trim(), kk:d.kk||'', alamat:d.alamat||'',
+    hp:d.hp||'', umur:String(d.umur||'').trim(), lomba:Array.isArray(d.lomba)?d.lomba:[]
+  }));
+}
+
+function buildDashboard(){
+  // ---- Stats ----
+  const totalKK = new Set(entries.map(e=>e.kk+e.rt)).size;
+  const rtCounts = {};
+  entries.forEach(e=>{rtCounts[e.rt]=(rtCounts[e.rt]||0)+1;});
+  const umurCounts = {};
+  umurOrder.forEach(u=>umurCounts[u]=0);
+  entries.forEach(e=>{umurCounts[e.umur]=(umurCounts[e.umur]||0)+1;});
+  const lombaCounts = {};
+  entries.forEach(e=>e.lomba.forEach(l=>{lombaCounts[l]=(lombaCounts[l]||0)+1;}));
+
+  statGrid.innerHTML='';
+  const stats = [
+    [entries.length, "Total Baris Daftar"],
+    [totalKK, "Keluarga Terlibat"],
+    [Object.keys(rtCounts).length, "RT Berpartisipasi"],
+    [Object.keys(lombaCounts).length, "Jenis Lomba Diminati"],
+  ];
+  stats.forEach(([num,lbl])=>{
+    const d = document.createElement('div');
+    d.className='stat';
+    d.innerHTML = `<div class="num">${num}</div><div class="lbl">${lbl}</div>`;
+    statGrid.appendChild(d);
+  });
+
+  if(chartRT) chartRT.destroy();
+  if(chartUmur) chartUmur.destroy();
+  if(chartLomba) chartLomba.destroy();
+
+  const rtKeys = Object.keys(rtCounts).sort();
+  chartRT = new Chart(document.getElementById('chartRT'), {
+    type:'bar',
+    data:{labels:rtKeys.map(r=>'RT '+r), datasets:[{data:rtKeys.map(r=>rtCounts[r]), backgroundColor:['#93C5FD','#FDE68A','#BBF7D0','#FCA5A5','#DDD6FE']}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  chartUmur = new Chart(document.getElementById('chartUmur'), {
+    type:'bar',
+    data:{labels:umurOrder.map(u=>u.replace(' Tahun','').replace(' ke atas','+')), datasets:[{data:umurOrder.map(u=>umurCounts[u]), backgroundColor:'#B91C1C'}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  const lombaSorted = Object.entries(lombaCounts).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lombaCount').textContent = '(' + lombaSorted.length + ' jenis lomba)';
+  chartLomba = new Chart(document.getElementById('chartLomba'), {
+    type:'bar',
+    data:{labels:lombaSorted.map(l=>l[0]), datasets:[{data:lombaSorted.map(l=>l[1]), backgroundColor:'#C9A227'}]},
+    options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{precision:0}}}}
+  });
+
+  activeRT='all'; activeUmur='all';
+  rtChipsEl.innerHTML=''; umurChipsEl.innerHTML='';
+  const rtOptions = [['all','Semua RT']].concat(rtKeys.map(r=>[r,'RT '+r]));
+  rtOptions.forEach(([val,lbl])=>{
+    const c = document.createElement('div');
+    c.className = 'chip' + (val==='all' ? ' active':'');
+    c.textContent = lbl;
+    c.onclick = ()=>{activeRT=val; renderList(); [...rtChipsEl.children].forEach(x=>x.classList.remove('active')); c.classList.add('active');};
+    rtChipsEl.appendChild(c);
+  });
+  const umurOptions = [['all','Semua Umur']].concat(umurOrder.map(u=>[u,u]));
+  umurOptions.forEach(([val,lbl])=>{
+    const c = document.createElement('div');
+    c.className = 'chip' + (val==='all' ? ' active':'');
+    c.textContent = lbl;
+    c.onclick = ()=>{activeUmur=val; renderList(); [...umurChipsEl.children].forEach(x=>x.classList.remove('active')); c.classList.add('active');};
+    umurChipsEl.appendChild(c);
+  });
+
+  renderList();
+}
+
+function renderList(){
+  const q = searchEl.value.trim().toLowerCase();
+  const filtered = entries.filter(e=>{
+    if(activeRT!=='all' && e.rt!==activeRT) return false;
+    if(activeUmur!=='all' && e.umur!==activeUmur) return false;
+    if(q){
+      const hay = (e.nama+' '+e.kk+' '+e.alamat+' '+e.lomba.join(' ')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  countEl.textContent = '(' + filtered.length + ' dari ' + entries.length + ')';
+  listEl.innerHTML = '';
+  if(filtered.length===0){
+    listEl.innerHTML = '<div class="empty">Tidak ada data yang cocok.</div>';
+    return;
+  }
+  filtered.forEach(e=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-name">${e.nama}</div>
+        <div class="card-meta">KK: ${e.kk}</div>
+      </div>
+      <div class="card-badges">
+        <span class="badge rt${e.rt}">RT ${e.rt}</span>
+        <span class="badge">${e.umur}</span>
+      </div>
+      <div class="card-lomba"><b>Lomba:</b> ${e.lomba.join(', ')}</div>
+      <div class="card-phone">${e.alamat} · ${e.hp}</div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+async function loadFromUrl(url){
+  loadBtn.disabled = true;
+  sourceStatusEl.className = 'source-status';
+  sourceStatusEl.textContent = 'Memuat data dari Google Sheets...';
+  try{
+    const res = await fetch(url, {method:'GET'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if(!json.data || !Array.isArray(json.data)) throw new Error('Format data tidak sesuai');
+    entries = normalizeFromApi(json.data);
+    buildDashboard();
+    const waktu = json.updated ? new Date(json.updated).toLocaleString('id-ID') : '';
+    sourceStatusEl.className = 'source-status ok';
+    sourceStatusEl.textContent = 'Terhubung ke Google Sheets — ' + entries.length + ' baris data, terakhir ditarik ' + waktu + '.';
+    reloadBtn.style.display = 'inline-block';
+  }catch(err){
+    sourceStatusEl.className = 'source-status err';
+    sourceStatusEl.textContent = 'Gagal memuat: ' + err.message + '. Pastikan URL benar, dan deployment Apps Script diset "Who has access: Anyone".';
+  }finally{
+    loadBtn.disabled = false;
+  }
+}
+
+loadBtn.addEventListener('click', ()=>{
+  const url = urlInput.value.trim();
+  if(!url){ sourceStatusEl.className='source-status err'; sourceStatusEl.textContent='Tempel URL Web App terlebih dahulu.'; return; }
+  loadFromUrl(url);
+});
+reloadBtn.addEventListener('click', ()=>{
+  const url = urlInput.value.trim();
+  if(url) loadFromUrl(url);
+});
+
+// ---- Tampilkan data contoh saat halaman pertama dibuka ----
+entries = normalizeFromRawArray(fallbackRaw);
+buildDashboard();
+</script>
+</body>
+</html>
